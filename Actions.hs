@@ -35,26 +35,27 @@ move dir rm = undefined
 {- Return True if the object appears in the room. -}
 
 objectHere :: String -> Room -> Bool
-objectHere o rm = undefined
+objectHere o rm = or [o == obj | obj <- map obj_name $ objects rm]
 
 {- Given an object id and a room description, return a new room description
    without that object -}
 
 removeObject :: String -> Room -> Room
-removeObject o rm = undefined
+removeObject o rm = rm {objects = [obj | obj <- objects rm, o /= obj_name obj]}
 
 {- Given an object and a room description, return a new room description
    with that object added -}
 
 addObject :: Object -> Room -> Room
-addObject o rm = undefined
+addObject o rm = rm {objects = o : objects rm}
 
 {- Given an object id and a list of objects, return the object data. Note
    that you can assume the object is in the list (i.e. that you have
    checked with 'objectHere') -}
 
 findObj :: String -> [Object] -> Object
-findObj o ds = undefined
+findObj o ds = tar
+   where (tar:rest) = [obj | obj <- ds, o == obj_name obj]
 
 {- Use 'findObj' to find an object in a room description -}
 
