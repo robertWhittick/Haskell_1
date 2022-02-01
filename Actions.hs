@@ -54,19 +54,20 @@ addObject o rm = rm {objects = o : objects rm}
    checked with 'objectHere') -}
 
 findObj :: String -> [Object] -> Object
-findObj o ds = tar
-   where (tar:rest) = [obj | obj <- ds, o == obj_name obj]
+findObj o ds = tar where (tar:rest) = [obj | obj <- ds, o == obj_name obj]
 
 {- Use 'findObj' to find an object in a room description -}
 
 objectData :: String -> Room -> Object
-objectData o rm = undefined
+objectData o rm = findObj o $ objects rm
 
 {- Given a game state and a room id, replace the old room information with
    new data. If the room id does not already exist, add it. -}
 
 updateRoom :: GameData -> String -> Room -> GameData
-updateRoom gd rmid rmdata = undefined
+updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd] 
+                            then gd {world = [(fst rm, rmdata) | rm <- world gd, rmid == fst rm]}
+                            else gd {world = world gd ++ [(rmid, rmdata)]}
 
 {- Given a game state and an object id, find the object in the current
    room and add it to the player's inventory -}
@@ -84,7 +85,7 @@ removeInv gd obj = undefined
 {- Does the inventory in the game state contain the given object? -}
 
 carrying :: GameData -> String -> Bool
-carrying gd obj = undefined
+carrying gd obj = or [obj == obj_name item | item <- inventory gd]
 
 {-
 Define the "go" action. Given a direction and a game state, update the game
