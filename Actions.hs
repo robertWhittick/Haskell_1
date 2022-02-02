@@ -30,7 +30,9 @@ Nothing
 -}
 
 move :: String -> Room -> Maybe String
-move dir rm = undefined
+move dir rm = if null tar then Nothing
+                          else Just tar
+              where (tar:rest) = [room id | id <- exits rm, dir /= exit_dir id]
 
 {- Return True if the object appears in the room. -}
 
@@ -73,14 +75,15 @@ updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd]
    room and add it to the player's inventory -}
 
 addInv :: GameData -> String -> GameData
-addInv gd obj = undefined
+addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ snd tar, obj_name item == obj]}
+                  where (tar:rest) = [id | id <- world gd, location_id gd == fst id]
 
 {- Given a game state and an object id, remove the object from the
    inventory. Hint: use filter to check if something should still be in
    the inventory. -}
 
 removeInv :: GameData -> String -> GameData
-removeInv gd obj = undefined
+removeInv gd obj = gd {inventory = filter (\tar -> obj_name tar /= obj) $ inventory gd}
 
 {- Does the inventory in the game state contain the given object? -}
 
