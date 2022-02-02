@@ -8,6 +8,9 @@ data Object = Obj { obj_name :: String,
 instance Show Object where
    show obj = obj_longname obj
 
+data Direction = North | West | South | East
+   deriving Eq
+
 data Exit = Exit { exit_dir :: String,
                    exit_desc :: String,
                    room :: String }

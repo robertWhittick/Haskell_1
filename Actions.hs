@@ -17,6 +17,25 @@ commands "quit"      = Just quit
 commands "inventory" = Just inv
 commands _           = Nothing
 
+directions :: String -> Maybe Direction
+directions "north"   = Just North
+directions "west"    = Just West
+directions "south"   = Just South
+directions "east"    = Just East
+directions _         = Nothing
+
+object :: String -> Maybe Object {-objects to be consistent or object to be distinctive ?-}
+object "mug"        = Just mug {-cannot distinguish full and normal mug ?!-}
+object "coffeepot"  = Just coffeepot
+object _            = Nothing
+
+rooms :: String -> Maybe Room
+rooms "bedroom"     = Just bedroom
+rooms "kitchen"     = Just kitchen
+rooms "hall"        = Just hall
+rooms "street"      = Just street
+rooms _             = Nothing
+
 {- Given a direction and a room to move from, return the room id in
    that direction, if it exists.
 
