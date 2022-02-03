@@ -86,7 +86,7 @@ objectData o rm = findObj o $ objects rm
    new data. If the room id does not already exist, add it. -}
 
 updateRoom :: GameData -> String -> Room -> GameData
-updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd] 
+updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd]
                             then gd {world = [(fst rm, rmdata) | rm <- world gd, rmid == fst rm]}
                             else gd {world = world gd ++ [(rmid, rmdata)]}
 
@@ -195,3 +195,30 @@ inv state = (state, showInv (inventory state))
 quit :: Command
 quit state = (state { finished = True }, "Bye bye")
 
+save :: GameData -> String -> IO ()
+save gd fname = writeFile path content
+   where path = ".\\" ++ fname
+         content = location_id gd ++ " " ++
+                   tupleToString (world gd) ++ " " ++
+                   listToString (inventory gd) ++ " " ++
+                   boolToString (poured gd) ++ " " ++
+                   boolToString (caffeinated gd) ++ " " ++
+                   boolToString (finished gd)
+
+load :: String -> IO GameData
+
+listToString :: [Object] -> String
+listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "]"
+
+stringToList ::  String -> [Object]
+
+tupleToString :: [(String, Room)] -> String
+tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
+
+tupleToString :: String -> [(String, Room)] 
+
+boolToString :: Bool -> String
+boolToString bool = if bool then "True" else "False"
+
+stringToBool :: String -> Bool
+stringToBool string = string == "True"
