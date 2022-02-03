@@ -87,7 +87,7 @@ objectData o rm = findObj o $ objects rm
 
 updateRoom :: GameData -> String -> Room -> GameData
 updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd]
-                            then gd {world = [(fst rm, rmdata) | rm <- world gd, rmid == fst rm]}
+                            then gd {world = [if rmid == fst rm then (fst rm, rmdata) else rm | rm <- world gd]}
                             else gd {world = world gd ++ [(rmid, rmdata)]}
 
 {- Given a game state and an object id, find the object in the current
