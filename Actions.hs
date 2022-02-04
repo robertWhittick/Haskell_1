@@ -125,10 +125,7 @@ go :: Action
 go dir state =
    case move dir (getRoomData state) of
       Nothing -> (state, "Room error")
-      Just newroom -> (
-         case rooms newroom of
-            Nothing -> (state, "Room error")
-            Just room -> (state { world = [(newroom, room)] }, "Moved to new room") )
+      Just newroom -> (state { location_id = newroom }, "Moved to new room")
 
 {- Remove an item from the current room, and put it in the player's inventory.
    This should only work if the object is in the current room. Use 'objectHere'
