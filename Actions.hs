@@ -138,9 +138,9 @@ go dir state = undefined
 
 get :: Action
 get obj state = if objectHere obj $ findRoom state
-                then (new, "Object got!")
+                then (state', "Object got!")
                 else (state, "Object not found!")
-   where new = updateRoom (addInv state obj) rmid (removeObject obj tar)
+   where state' = updateRoom (addInv state obj) rmid (removeObject obj tar)
          findRoom state = tar
          rmid = location_id state
          (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
@@ -152,11 +152,11 @@ get obj state = if objectHere obj $ findRoom state
 
 put :: Action
 put obj state = if carrying state obj
-                then new
+                then state'
                 else (state, "Object not found!")
-   where new = case object obj of 
-               Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth tar), "Object put!")
-               Nothing -> (state, "Object not recognized!")
+   where state'= case object obj of
+                  Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth tar), "Object put!")
+                  Nothing -> (state, "Object not recognized!")
          rmid = location_id state
          (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
@@ -165,7 +165,14 @@ put obj state = if carrying state obj
    inventory! -}
 
 examine :: Action
-examine obj state = undefined
+examine obj state
+  | carrying state obj = (state, item)
+  | objectHere obj tar = (state, obj_name $ objectData obj tar)
+  | otherwise = (state, "Object not found!")
+  where
+      rmid = location_id state
+      (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
+      (item:others) = [obj_name elem | elem <- inventory state, obj_name elem == obj]
 
 {- Pour the coffee. Obviously, this should only work if the player is carrying
    both the pot and the mug. This should update the status of the "mug"
@@ -201,7 +208,10 @@ drink obj state = if or [fullmug == item | item <- inventory state]
 -}
 
 open :: Action
-open obj state = undefined
+open obj state = if caffeinated state
+                 then (updateRoom state "hall" hall', openedhall)
+                 else (state, "You not energetic enough for a walk!")
+                 where hall' = hall {exits = exits hall ++ openedexits}
 
 {- Don't update the game state, just list what the player is carrying -}
 
