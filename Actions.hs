@@ -94,8 +94,7 @@ updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd]
    room and add it to the player's inventory -}
 
 addInv :: GameData -> String -> GameData
-addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ snd tar, obj_name item == obj]}
-                  where (tar:rest) = [id | id <- world gd, location_id gd == fst id]
+addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ getRoomData gd, obj_name item == obj]}
 
 {- Given a game state and an object id, remove the object from the
    inventory. Hint: use filter to check if something should still be in
@@ -140,13 +139,12 @@ go dir state =
 -}
 
 get :: Action
-get obj state = if objectHere obj $ findRoom state
+get obj state = if objectHere obj rm
                 then (state', "Object got!")
                 else (state, "Object not found!")
-   where state' = updateRoom (addInv state obj) rmid (removeObject obj tar)
-         findRoom state = tar
+   where state' = updateRoom (addInv state obj) rmid (removeObject obj rm)
+         rm = getRoomData state
          rmid = location_id state
-         (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
 {- Remove an item from the player's inventory, and put it in the current room.
    Similar to 'get' but in reverse - find the object in the inventory, create
@@ -158,10 +156,10 @@ put obj state = if carrying state obj
                 then state'
                 else (state, "Object not found!")
    where state'= case object obj of
-                  Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth tar), "Object put!")
+                  Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth rm), "Object put!")
                   Nothing -> (state, "Object not recognized!")
+         rm = getRoomData state
          rmid = location_id state
-         (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
 {- Don't update the state, just return a message giving the full description
    of the object. As long as it's either in the room or the player's 
@@ -170,12 +168,12 @@ put obj state = if carrying state obj
 examine :: Action
 examine obj state
   | carrying state obj = (state, item)
-  | objectHere obj tar = (state, obj_name $ objectData obj tar)
+  | objectHere obj rm = (state, obj_desc $ objectData obj rm)
   | otherwise = (state, "Object not found!")
   where
+      rm = getRoomData state
       rmid = location_id state
-      (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
-      (item:others) = [obj_name elem | elem <- inventory state, obj_name elem == obj]
+      (item:others) = [obj_desc elem | elem <- inventory state, obj_name elem == obj]
 
 {- Pour the coffee. Obviously, this should only work if the player is carrying
    both the pot and the mug. This should update the status of the "mug"
