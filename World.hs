@@ -8,7 +8,7 @@ data Object = Obj { obj_name :: String,
 instance Show Object where
    show obj = obj_longname obj
 
-data Direction = North | West | South | East
+data Direction = North | West | South | East | Out
    deriving Eq
 
 data Exit = Exit { exit_dir :: String,
@@ -48,7 +48,7 @@ instance Show GameData where
 type Action  = String -> GameData -> (GameData, String)
 
 -- Things which just update the game state
-type Command = GameData -> (GameData, String)
+--type Command = GameData -> (GameData, String)
 
 mug, fullmug, coffeepot :: Object
 mug       = Obj "mug" "a coffee mug" "A coffee mug"

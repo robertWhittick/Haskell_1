@@ -22,6 +22,7 @@ directions "north"   = Just North
 directions "west"    = Just West
 directions "south"   = Just South
 directions "east"    = Just East
+directions "out"     = just Out
 directions _         = Nothing
 
 object :: String -> Maybe Object {-objects to be consistent or object to be distinctive ?-}

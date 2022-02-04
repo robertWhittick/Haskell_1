@@ -20,6 +20,21 @@ The monad of parsers
 
 newtype Parser a              =  P (String -> [(a,String)])
 
+data Command 
+   Go Direction | 
+   Get Object | 
+   Drop Object | 
+   Examine Object | 
+   Pour Object | 
+   Drink Object | 
+   Open Door | 
+   Inv | 
+   Quit |
+   Error Message
+
+commandParser :: Parser Command
+commandParser = do goParser
+
 instance Functor Parser where
    fmap f p = do p' <- p
                  return (f p')
