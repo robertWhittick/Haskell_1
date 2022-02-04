@@ -50,8 +50,8 @@ Nothing
 
 move :: String -> Room -> Maybe String
 move dir rm = if null tar then Nothing
-                          else Just tar
-              where (tar:rest) = [room id | id <- exits rm, dir /= exit_dir id]
+                          else Just $ head tar
+              where tar = [room id | id <- exits rm, dir == exit_dir id]
 
 {- Return True if the object appears in the room. -}
 
@@ -143,7 +143,13 @@ go dir state =
 -}
 
 get :: Action
-get obj state = undefined
+get obj state = if objectHere obj $ findRoom state
+                then (state', "Object got!")
+                else (state, "Object not found!")
+   where state' = updateRoom (addInv state obj) rmid (removeObject obj tar)
+         findRoom state = tar
+         rmid = location_id state
+         (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
 {- Remove an item from the player's inventory, and put it in the current room.
    Similar to 'get' but in reverse - find the object in the inventory, create
@@ -151,14 +157,28 @@ get obj state = undefined
 -}
 
 put :: Action
-put obj state = undefined
+put obj state = if carrying state obj
+                then state'
+                else (state, "Object not found!")
+   where state'= case object obj of
+                  Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth tar), "Object put!")
+                  Nothing -> (state, "Object not recognized!")
+         rmid = location_id state
+         (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
 {- Don't update the state, just return a message giving the full description
    of the object. As long as it's either in the room or the player's 
    inventory! -}
 
 examine :: Action
-examine obj state = undefined
+examine obj state
+  | carrying state obj = (state, item)
+  | objectHere obj tar = (state, obj_name $ objectData obj tar)
+  | otherwise = (state, "Object not found!")
+  where
+      rmid = location_id state
+      (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
+      (item:others) = [obj_name elem | elem <- inventory state, obj_name elem == obj]
 
 {- Pour the coffee. Obviously, this should only work if the player is carrying
    both the pot and the mug. This should update the status of the "mug"
@@ -166,7 +186,10 @@ examine obj state = undefined
 -}
 
 pour :: Action
-pour obj state = undefined
+pour obj state = if carrying state "coffeepot" && carrying state obj
+                 then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state]},
+                       "Got a full mug of coffee!")
+                 else (state, "Missing coffee pot or mug!")
 
 {- Drink the coffee. This should only work if the player has a full coffee 
    mug! Doing this is required to be allowed to open the door. Once it is
@@ -176,7 +199,11 @@ pour obj state = undefined
 -}
 
 drink :: Action
-drink obj state = undefined
+drink obj state = if or [fullmug == item | item <- inventory state]
+                  then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state],
+                               caffeinated = True},
+                       "Drank a mug of coffee. You feel more energetic now!")
+                  else (state, "Missing a full mug of coffee!")
 
 {- Open the door. Only allowed if the player has had coffee! 
    This should change the description of the hall to say that the door is open,
@@ -187,7 +214,10 @@ drink obj state = undefined
 -}
 
 open :: Action
-open obj state = undefined
+open obj state = if caffeinated state
+                 then (updateRoom state "hall" hall', openedhall)
+                 else (state, "You not energetic enough for a walk!")
+                 where hall' = hall {exits = exits hall ++ openedexits}
 
 {- Don't update the game state, just list what the player is carrying -}
 
@@ -200,7 +230,7 @@ inv state = (state, showInv (inventory state))
 
 quit :: Command
 quit state = (state { finished = True }, "Bye bye")
-
+{-
 save :: GameData -> String -> IO ()
 save gd fname = writeFile path content
    where path = ".\\" ++ fname
@@ -228,3 +258,4 @@ boolToString bool = if bool then "True" else "False"
 
 stringToBool :: String -> Bool
 stringToBool string = string == "True"
+-}
