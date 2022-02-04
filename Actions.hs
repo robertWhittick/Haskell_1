@@ -173,7 +173,10 @@ examine obj state = undefined
 -}
 
 pour :: Action
-pour obj state = undefined
+pour obj state = if carrying state "coffeepot" && carrying state obj
+                 then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state]},
+                       "Got a full mug of coffee!")
+                 else (state, "Missing coffee pot or mug!")
 
 {- Drink the coffee. This should only work if the player has a full coffee 
    mug! Doing this is required to be allowed to open the door. Once it is
@@ -183,7 +186,11 @@ pour obj state = undefined
 -}
 
 drink :: Action
-drink obj state = undefined
+drink obj state = if or [fullmug == item | item <- inventory state]
+                  then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state],
+                               caffeinated = True},
+                       "Drank a mug of coffee. You feel more energetic now!")
+                  else (state, "Missing a full mug of coffee!")
 
 {- Open the door. Only allowed if the player has had coffee! 
    This should change the description of the hall to say that the door is open,
