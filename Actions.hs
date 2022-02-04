@@ -26,7 +26,7 @@ directions _         = Nothing
 
 object :: String -> Maybe Object {-objects to be consistent or object to be distinctive ?-}
 object "mug"        = Just mug {-cannot distinguish full and normal mug ?!-}
-object "coffeepot"  = Just coffeepot
+object "coffee"     = Just coffeepot
 object _            = Nothing
 
 rooms :: String -> Maybe Room
@@ -49,9 +49,9 @@ Nothing
 -}
 
 move :: String -> Room -> Maybe String
-move dir rm = if null tar then Nothing
-                          else Just $ head tar
-              where tar = [room id | id <- exits rm, dir == exit_dir id]
+move dir rm | null tar = Nothing
+            | otherwise = Just $ head tar
+   where tar = [room id | id <- exits rm, dir == exit_dir id]
 
 {- Return True if the object appears in the room. -}
 
@@ -139,9 +139,8 @@ go dir state =
 -}
 
 get :: Action
-get obj state = if objectHere obj rm
-                then (state', "Object got!")
-                else (state, "Object not found!")
+get obj state | objectHere obj rm = (state', "Object got!")
+              | otherwise         = (state, "Object not found!")
    where state' = updateRoom (addInv state obj) rmid (removeObject obj rm)
          rm = getRoomData state
          rmid = location_id state
@@ -152,9 +151,8 @@ get obj state = if objectHere obj rm
 -}
 
 put :: Action
-put obj state = if carrying state obj
-                then state'
-                else (state, "Object not found!")
+put obj state | carrying state obj = state'
+              | otherwise = (state, "Object not found!")
    where state'= case object obj of
                   Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth rm), "Object put!")
                   Nothing -> (state, "Object not recognized!")
@@ -166,10 +164,9 @@ put obj state = if carrying state obj
    inventory! -}
 
 examine :: Action
-examine obj state
-  | carrying state obj = (state, item)
-  | objectHere obj rm = (state, obj_desc $ objectData obj rm)
-  | otherwise = (state, "Object not found!")
+examine obj state | carrying state obj = (state, item)
+                  | objectHere obj rm = (state, obj_desc $ objectData obj rm)
+                  | otherwise         = (state, "Object not found!")
   where
       rm = getRoomData state
       rmid = location_id state
@@ -181,7 +178,7 @@ examine obj state
 -}
 
 pour :: Action
-pour obj state = if carrying state "coffeepot" && carrying state obj
+pour obj state = if carrying state "coffee" && carrying state obj
                  then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state]},
                        "Got a full mug of coffee!")
                  else (state, "Missing coffee pot or mug!")
@@ -209,10 +206,9 @@ drink obj state = if or [fullmug == item | item <- inventory state]
 -}
 
 open :: Action
-open obj state = if caffeinated state
-                 then (updateRoom state "hall" hall', openedhall)
-                 else (state, "You not energetic enough for a walk!")
-                 where hall' = hall {exits = exits hall ++ openedexits}
+open obj state | caffeinated state = (updateRoom state "hall" hall', "Door opened!")
+               | otherwise         = (state, "You not energetic enough for a walk!")
+   where hall' = hall {room_desc = openedhall, exits = exits hall ++ openedexits}
 
 {- Don't update the game state, just list what the player is carrying -}
 
