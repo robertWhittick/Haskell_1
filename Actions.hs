@@ -50,8 +50,8 @@ Nothing
 
 move :: String -> Room -> Maybe String
 move dir rm = if null tar then Nothing
-                          else Just tar
-              where (tar:rest) = [room id | id <- exits rm, dir /= exit_dir id]
+                          else Just $ head tar
+              where tar = [room id | id <- exits rm, dir == exit_dir id]
 
 {- Return True if the object appears in the room. -}
 
