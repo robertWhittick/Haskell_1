@@ -122,7 +122,13 @@ e.g.
 -}
 
 go :: Action
-go dir state = undefined
+go dir state =
+   case move dir (getRoomData state) of
+      Nothing -> (state, "Room error")
+      Just newroom -> (
+         case rooms newroom of
+            Nothing -> (state, "Room error")
+            Just room -> (state { world = [(newroom, room)] }, "Moved to new room") )
 
 {- Remove an item from the current room, and put it in the player's inventory.
    This should only work if the object is in the current room. Use 'objectHere'
@@ -205,17 +211,17 @@ save gd fname = writeFile path content
                    boolToString (caffeinated gd) ++ " " ++
                    boolToString (finished gd)
 
-load :: String -> IO GameData
+--load :: String -> IO GameData
 
 listToString :: [Object] -> String
 listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "]"
 
-stringToList ::  String -> [Object]
+--stringToList ::  String -> [Object]
 
 tupleToString :: [(String, Room)] -> String
 tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
 
-tupleToString :: String -> [(String, Room)] 
+--tupleToString :: String -> [(String, Room)] 
 
 boolToString :: Bool -> String
 boolToString bool = if bool then "True" else "False"
