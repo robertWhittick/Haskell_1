@@ -137,7 +137,13 @@ go dir state = undefined
 -}
 
 get :: Action
-get obj state = undefined
+get obj state = if objectHere obj $ findRoom state
+                then (new, "Object got!")
+                else (state, "Object not found!")
+   where new = updateRoom (addInv state obj) rmid (removeObject obj tar)
+         findRoom state = tar
+         rmid = location_id state
+         (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
 {- Remove an item from the player's inventory, and put it in the current room.
    Similar to 'get' but in reverse - find the object in the inventory, create
@@ -145,7 +151,14 @@ get obj state = undefined
 -}
 
 put :: Action
-put obj state = undefined
+put obj state = if carrying state obj
+                then new
+                else (state, "Object not found!")
+   where new = case object obj of 
+               Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth tar), "Object put!")
+               Nothing -> (state, "Object not recognized!")
+         rmid = location_id state
+         (tar:rest) = [snd rm | rm <- world state, fst rm /= rmid]
 
 {- Don't update the state, just return a message giving the full description
    of the object. As long as it's either in the room or the player's 
@@ -194,7 +207,7 @@ inv state = (state, showInv (inventory state))
 
 quit :: Command
 quit state = (state { finished = True }, "Bye bye")
-
+{-
 save :: GameData -> String -> IO ()
 save gd fname = writeFile path content
    where path = ".\\" ++ fname
@@ -222,3 +235,4 @@ boolToString bool = if bool then "True" else "False"
 
 stringToBool :: String -> Bool
 stringToBool string = string == "True"
+-}
