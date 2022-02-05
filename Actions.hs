@@ -220,7 +220,7 @@ inv state = (state, showInv (inventory state))
 
 quit :: Command
 quit state = (state { finished = True }, "Bye bye")
-{-
+
 save :: GameData -> String -> IO ()
 save gd fname = writeFile path content
    where path = ".\\" ++ fname
@@ -231,21 +231,43 @@ save gd fname = writeFile path content
                    boolToString (caffeinated gd) ++ " " ++
                    boolToString (finished gd)
 
---load :: String -> IO GameData
+load :: String -> IO GameData
+load fname = do content <- readFile path
+                return $ go (words content)
+   where path = ".\\" ++ fname
+         go content = GameData (head content)
+                               (stringToTuple $ content !! 1)
+                               (stringToList $ content !! 2)
+                               (stringToBool $ content !! 3)
+                               (stringToBool $ content !! 4)
+                               (stringToBool $ content !! 5)
 
 listToString :: [Object] -> String
 listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "]"
 
---stringToList ::  String -> [Object]
+stringToList ::  String -> [Object]
+stringToList xs = map go $ wordsWhen (==',') xs
+   where go x = case object x of
+                  Just sth -> sth
+                  --Nothing ?
 
 tupleToString :: [(String, Room)] -> String
 tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
 
---tupleToString :: String -> [(String, Room)] 
+stringToTuple :: String -> [(String, Room)]
+stringToTuple xs = map go $ wordsWhen (==',') xs
+   where go x = case rooms x of
+                  Just sth -> (x, sth)
+                  --Nothing ?
 
 boolToString :: Bool -> String
 boolToString bool = if bool then "True" else "False"
 
 stringToBool :: String -> Bool
 stringToBool string = string == "True"
--}
+
+wordsWhen     :: (Char -> Bool) -> String -> [String] --Copied from stackoverflow
+wordsWhen p s =  case dropWhile p s of
+                      "" -> []
+                      s' -> w : wordsWhen p s''
+                            where (w, s'') = break p s'
