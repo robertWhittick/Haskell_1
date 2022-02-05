@@ -75,7 +75,7 @@ addObject o rm = rm {objects = o : objects rm}
    checked with 'objectHere') -}
 
 findObj :: String -> [Object] -> Object
-findObj o ds = tar where (tar:rest) = [obj | obj <- ds, o == obj_name obj]
+findObj o ds = tar where (tar:_) = [obj | obj <- ds, o == obj_name obj]
 
 {- Use 'findObj' to find an object in a room description -}
 
@@ -152,12 +152,11 @@ get obj state | objectHere obj rm = (state', "Object got!")
 
 put :: Action
 put obj state | carrying state obj = state'
-              | otherwise = (state, "Object not found!")
-   where state'= case object obj of
-                  Just sth -> (updateRoom (removeInv state obj) rmid (addObject sth rm), "Object put!")
-                  Nothing -> (state, "Object not recognized!")
+              | otherwise          = (state, "Object not found!")
+   where state'= (updateRoom (removeInv state obj) rmid (addObject tar rm), "Object put!")
          rm = getRoomData state
          rmid = location_id state
+         (tar:_) = [item | item <- inventory state, obj_name item == obj]
 
 {- Don't update the state, just return a message giving the full description
    of the object. As long as it's either in the room or the player's 
@@ -165,12 +164,12 @@ put obj state | carrying state obj = state'
 
 examine :: Action
 examine obj state | carrying state obj = (state, item)
-                  | objectHere obj rm = (state, obj_desc $ objectData obj rm)
-                  | otherwise         = (state, "Object not found!")
+                  | objectHere obj rm  = (state, obj_desc $ objectData obj rm)
+                  | otherwise          = (state, "Object not found!")
   where
       rm = getRoomData state
       rmid = location_id state
-      (item:others) = [obj_desc elem | elem <- inventory state, obj_name elem == obj]
+      (item:_) = [obj_desc elem | elem <- inventory state, obj_name elem == obj]
 
 {- Pour the coffee. Obviously, this should only work if the player is carrying
    both the pot and the mug. This should update the status of the "mug"
