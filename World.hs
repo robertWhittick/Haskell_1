@@ -48,7 +48,7 @@ instance Show GameData where
 type Action  = String -> GameData -> (GameData, String)
 
 -- Things which just update the game state
---type Command = GameData -> (GameData, String)
+type Command = GameData -> (GameData, String)
 
 mug, fullmug, coffeepot :: Object
 mug       = Obj "mug" "a coffee mug" "A coffee mug"

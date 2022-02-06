@@ -7,6 +7,9 @@ Minor changes by Edwin Brady
 
 module Parsing where
 
+import World
+import Actions
+
 import Data.Char
 import Control.Monad
 import Control.Applicative hiding (many)
@@ -20,20 +23,20 @@ The monad of parsers
 
 newtype Parser a              =  P (String -> [(a,String)])
 
-data Command 
-   Go Direction | 
+data Operation =
+   Go (Maybe Direction) | 
    Get Object | 
    Drop Object | 
    Examine Object | 
    Pour Object | 
    Drink Object | 
-   Open Door | 
+   Open Object | 
    Inv | 
    Quit |
-   Error Message
+   Error String
 
-commandParser :: Parser Command
-commandParser = do goParser
+operationParser :: Parser Operation
+operationParser = P (\inp -> [(Go (directions "north"), inp)])
 
 instance Functor Parser where
    fmap f p = do p' <- p
