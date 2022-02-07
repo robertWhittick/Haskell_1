@@ -275,7 +275,7 @@ stringToBool string = string == "True"
 {-
 
 -}
---Copied from stackoverflow: https://stackoverflow.com/questions/4978578/how-to-split-a-string-in-haskell
+--Copied from stackoverflow: https://stackoverflow.com/a/4981265 by https://stackoverflow.com/users/1729925/steve
 wordsWhen     :: (Char -> Bool) -> String -> [String]
 wordsWhen p s =  case dropWhile p s of                      --remove all initial instances of the delimiter
                       "" -> []                              --if theres nothing left, return an empty list
