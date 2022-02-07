@@ -20,7 +20,7 @@ repl state = do print state
                 putStr "What now? "
                 hFlush stdout
                 cmd <- getLine
-                let (state', msg) = operations state $ operationParser cmd
+                (state', msg) <- operations state $ operationParser cmd
                 putStrLn msg
                 if won state' then do putStrLn winmessage
                                       return state'

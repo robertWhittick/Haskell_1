@@ -4,26 +4,41 @@ import World
 
 --Converts a String into a Direction
 directions :: String -> Maybe Direction
-directions "north"   = Just North
-directions "west"    = Just West
-directions "south"   = Just South
-directions "east"    = Just East
-directions "out"     = Just Out
-directions _         = Nothing
+directions x = case x of
+                  "north" -> Just North 
+                  "south" -> Just South 
+                  "west" -> Just West 
+                  "east" -> Just East 
+                  "out" -> Just Out
+                  "in" -> Just In 
+                  _ -> Nothing
 
 --Converts a String into an Object
 object :: String -> Maybe Object
-object "mug"        = Just mug
-object "coffee"     = Just coffeepot
-object _            = Nothing
+object x = case x of
+            "mug" -> Just mug
+            "full mug" -> Just fullmug
+            "coffee" -> Just coffeepot 
+            "note0" -> Just note0 
+            "note1" -> Just note1
+            "note2" -> Just note2
+            "note3" -> Just note3 
+            "note4" -> Just note4 
+            "mask" -> Just mask 
+            "key" -> Just key 
+            "door" -> Just door 
+            _ -> Nothing
 
 --Converts a String into a Room
 rooms :: String -> Maybe Room
-rooms "bedroom"     = Just bedroom
-rooms "kitchen"     = Just kitchen
-rooms "hall"        = Just hall
-rooms "street"      = Just street
-rooms _             = Nothing
+rooms x = case x of
+            "bedroom" -> Just bedroom
+            "toilet" -> Just toilet 
+            "kitchen" -> Just kitchen 
+            "hall" -> Just hall
+            "garage" -> Just garage
+            "street" -> Just street 
+            _ -> Nothing
 
 {- Given a direction and a room to move from, return the room id in
    that direction, if it exists. -}
@@ -193,38 +208,41 @@ load :: String -> IO GameData
 load fname = do content <- readFile path
                 return $ go (words content)
    where path = ".\\" ++ fname
-         go content = GameData (head content)
-                               (stringToTuple $ content !! 1)
-                               (stringToList $ content !! 2)
-                               (stringToBool $ content !! 3)
-                               (stringToBool $ content !! 4)
-                               (stringToBool $ content !! 5)
+         go xs = GameData (head xs)
+                          (stringToTuple $ xs !! 1)
+                          (stringToList $ xs !! 2)
+                          (stringToBool $ xs !! 3)
+                          (stringToBool $ xs !! 4)
+                          (stringToBool $ xs !! 5)
 
 {- Converts a list of Objects to a String.
    (Used to write the player's inventory in a save file)
    Used by: save -}
 listToString :: [Object] -> String
-listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "]"
+listToString xs = "[" ++ content ++ "]"
+   where temp = foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs
+         content = if null temp then "" else init temp
 
 {- Converts a String to a list of Objects.
    (Used to load the player's inventory from a save file)
    Used by: load -}
 stringToList ::  String -> [Object]
-stringToList xs = map go $ wordsWhen (==',') xs
+stringToList xs = map go $ wordsWhen (==',') $ init $ tail xs
    where go x = maybe undefined id (object x)
 
 {-
-Converts a tuple containing a String and a Room to a String. (Used to save the "world" in GameData to a save file)
+Converts a tuple containing a String and a Room to a String.
+(Used to save the "world" in GameData to a save file)
 Used by: save
 -}
 tupleToString :: [(String, Room)] -> String
-tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
+tupleToString xs = "[" ++ init (foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs]) ++ "]"
 
 {- Converts a String to a tuple containing a String and a Room.
    (Used to load the "world" in GameData from a save file)
    Used by: load -}
 stringToTuple :: String -> [(String, Room)]
-stringToTuple xs = map go $ wordsWhen (==',') xs
+stringToTuple xs = map go $ wordsWhen (==',') $ init $ tail xs
    where go x = case rooms x of
                   Just sth -> (x, sth)
                   Nothing -> undefined
@@ -248,6 +266,6 @@ stringToBool string = string == "True"
 wordsWhen     :: (Char -> Bool) -> String -> [String]
 wordsWhen p s =  case dropWhile p s of                      --remove all initial instances of the delimiter
                       "" -> []                              --if theres nothing left, return an empty list
-                      s' -> w : wordsWhen p s''             --if there isn't nothing, cons the part before the next instance
+                      s' -> w : wordsWhen p s''             --if there is something, cons the part before the next instance
                             where (w, s'') = break p s'        --of the delimiter with this function recursively reapplied
                                                                --to the rest of the string

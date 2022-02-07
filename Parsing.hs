@@ -35,24 +35,30 @@ data Operation =
    Drink Object |
    Open Object |
    Inv |
+   Save String |
+   Load String |
    Quit |
    Error
 
 {-
 Converts an Operation to the resulting GameData after applying the Operation and a message for the user through intermediary functions.
 -}
-operations :: GameData -> Operation -> (GameData, String)
+operations :: GameData -> Operation -> IO (GameData, String)
 operations state cmd = case cmd of
-                        Go x -> go x state
-                        Get x -> get x state
-                        Drop x -> put x state
-                        Examine x -> examine x state
-                        Pour x -> pour x state
-                        Drink x -> drink x state
-                        Open x -> open x state
-                        Inv -> inv state
-                        Quit -> quit state
-                        _ -> (state, "I don't understand")
+                        Go x -> return (go x state)
+                        Get x -> return (get x state)
+                        Drop x -> return (put x state)
+                        Examine x -> return (examine x state)
+                        Pour x -> return (pour x state)
+                        Drink x -> return (drink x state)
+                        Open x -> return (open x state)
+                        Inv -> return (inv state)
+                        Save x -> do save state x
+                                     return (state, "Saved.")
+                        Load x -> do state' <- load x
+                                     return (state', "Loaded")
+                        Quit -> return (quit state)
+                        _ -> return (state, "I don't understand")
 
 {-
 Turns a String (input from the user) into an Operation.
@@ -67,6 +73,8 @@ operationParser cmd = case words cmd of
      ["drink",arg] -> maybe Error Drink (object arg)
      ["open",arg] -> maybe Error Open (object arg)
      ["inv"] -> Inv
+     ["save",arg] -> Save arg
+     ["load",arg] -> Load arg
      ["quit"] -> Quit
      _ -> Error
 
