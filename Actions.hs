@@ -248,9 +248,7 @@ listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "
 
 stringToList ::  String -> [Object]
 stringToList xs = map go $ wordsWhen (==',') xs
-   where go x = case object x of
-                  Just sth -> sth
-                  --Nothing ?
+   where go x = maybe undefined id (object x)
 
 tupleToString :: [(String, Room)] -> String
 tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
@@ -259,7 +257,7 @@ stringToTuple :: String -> [(String, Room)]
 stringToTuple xs = map go $ wordsWhen (==',') xs
    where go x = case rooms x of
                   Just sth -> (x, sth)
-                  --Nothing ?
+                  Nothing -> undefined
 
 boolToString :: Bool -> String
 boolToString bool = if bool then "True" else "False"
