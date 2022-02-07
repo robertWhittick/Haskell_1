@@ -1,8 +1,6 @@
 module World where
 
-{-
-A command with an argument when applicable
--}
+{- A command with an argument when applicable -}
 data Operation =
    Go Direction |
    Get Object |
