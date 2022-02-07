@@ -14,25 +14,16 @@ winmessage = "Congratulations, you have made it out of the house.\n" ++
 {- Given a game state, and user input (as a list of words) return a 
    new game state and a message for the user. -}
 
-process :: GameData -> [String] -> (GameData, String)
-process state [cmd,arg] = case actions cmd of
-                            Just fn -> fn arg state
-                            Nothing -> (state, "I don't understand")
-process state [cmd]     = case commands cmd of
-                            Just fn -> fn state
-                            Nothing -> (state, "I don't understand")
-process state _ = (state, "I don't understand")
-
 repl :: GameData -> IO GameData
 repl state | finished state = return state
 repl state = do print state
                 putStr "What now? "
                 hFlush stdout
                 cmd <- getLine
-                let (state', msg) = process state (words cmd)
+                let (state', msg) = operations state $ operationParser cmd
                 putStrLn msg
-                if (won state') then do putStrLn winmessage
-                                        return state'
+                if won state' then do putStrLn winmessage
+                                      return state'
                                else repl state'
 
 main :: IO ()

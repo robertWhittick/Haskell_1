@@ -2,21 +2,6 @@ module Actions where
 
 import World
 
-actions :: String -> Maybe Action
-actions "go"      = Just go
-actions "get"     = Just get
-actions "drop"    = Just put
-actions "pour"    = Just pour
-actions "examine" = Just examine
-actions "drink"   = Just drink
-actions "open"    = Just open
-actions _         = Nothing
-
-commands :: String -> Maybe Command
-commands "quit"      = Just quit
-commands "inventory" = Just inv
-commands _           = Nothing
-
 directions :: String -> Maybe Direction
 directions "north"   = Just North
 directions "west"    = Just West
@@ -49,21 +34,21 @@ Just "kitchen"
 Nothing
 -}
 
-move :: String -> Room -> Maybe String
+move :: Direction -> Room -> Maybe String
 move dir rm | null tar = Nothing
             | otherwise = Just $ head tar
    where tar = [room id | id <- exits rm, dir == exit_dir id]
 
 {- Return True if the object appears in the room. -}
 
-objectHere :: String -> Room -> Bool
-objectHere o rm = or [o == obj | obj <- map obj_name $ objects rm]
+objectHere :: Object  -> Room -> Bool
+objectHere o rm = or [o == obj | obj <- objects rm]
 
 {- Given an object id and a room description, return a new room description
    without that object -}
 
-removeObject :: String -> Room -> Room
-removeObject o rm = rm {objects = [obj | obj <- objects rm, o /= obj_name obj]}
+removeObject :: Object -> Room -> Room
+removeObject o rm = rm {objects = [obj | obj <- objects rm, o /= obj]}
 
 {- Given an object and a room description, return a new room description
    with that object added -}
@@ -75,12 +60,12 @@ addObject o rm = rm {objects = o : objects rm}
    that you can assume the object is in the list (i.e. that you have
    checked with 'objectHere') -}
 
-findObj :: String -> [Object] -> Object
-findObj o ds = tar where (tar:_) = [obj | obj <- ds, o == obj_name obj]
+findObj :: Object -> [Object] -> Object
+findObj o ds = tar where (tar:_) = [obj | obj <- ds, o == obj]
 
 {- Use 'findObj' to find an object in a room description -}
 
-objectData :: String -> Room -> Object
+objectData :: Object -> Room -> Object
 objectData o rm = findObj o $ objects rm
 
 {- Given a game state and a room id, replace the old room information with
@@ -94,20 +79,20 @@ updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd]
 {- Given a game state and an object id, find the object in the current
    room and add it to the player's inventory -}
 
-addInv :: GameData -> String -> GameData
-addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ getRoomData gd, obj_name item == obj]}
+addInv :: GameData -> Object -> GameData
+addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ getRoomData gd, item == obj]}
 
 {- Given a game state and an object id, remove the object from the
    inventory. Hint: use filter to check if something should still be in
    the inventory. -}
 
-removeInv :: GameData -> String -> GameData
-removeInv gd obj = gd {inventory = filter (\tar -> obj_name tar /= obj) $ inventory gd}
+removeInv :: GameData -> Object -> GameData
+removeInv gd obj = gd {inventory = filter (/= obj) $ inventory gd}
 
 {- Does the inventory in the game state contain the given object? -}
 
-carrying :: GameData -> String -> Bool
-carrying gd obj = or [obj == obj_name item | item <- inventory gd]
+carrying :: GameData -> Object -> Bool
+carrying gd obj = or [obj == item | item <- inventory gd]
 
 {-
 Define the "go" action. Given a direction and a game state, update the game
@@ -121,7 +106,7 @@ e.g.
 
 -}
 
-go :: Action
+go :: Action'
 go dir state =
    case move dir (getRoomData state) of
       Nothing -> (state, "Room error")
@@ -157,7 +142,7 @@ put obj state | carrying state obj = state'
    where state'= (updateRoom (removeInv state obj) rmid (addObject tar rm), "Object put!")
          rm = getRoomData state
          rmid = location_id state
-         (tar:_) = [item | item <- inventory state, obj_name item == obj]
+         (tar:_) = [item | item <- inventory state, item == obj]
 
 {- Don't update the state, just return a message giving the full description
    of the object. As long as it's either in the room or the player's 
@@ -170,7 +155,7 @@ examine obj state | carrying state obj = (state, item)
   where
       rm = getRoomData state
       rmid = location_id state
-      (item:_) = [obj_desc elem | elem <- inventory state, obj_name elem == obj]
+      (item:_) = [obj_desc elem | elem <- inventory state, elem == obj]
 
 {- Pour the coffee. Obviously, this should only work if the player is carrying
    both the pot and the mug. This should update the status of the "mug"
@@ -178,7 +163,7 @@ examine obj state | carrying state obj = (state, item)
 -}
 
 pour :: Action
-pour obj state = if carrying state "coffee" && carrying state obj
+pour obj state = if carrying state coffeepot && carrying state obj
                  then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state]},
                        "Got a full mug of coffee!")
                  else (state, "Missing coffee pot or mug!")

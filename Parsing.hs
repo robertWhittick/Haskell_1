@@ -24,52 +24,50 @@ The monad of parsers
 newtype Parser a              =  P (String -> [(a,String)])
 
 data Operation =
-   Go Direction | 
-   Get Object | 
-   Drop Object | 
-   Examine Object | 
-   Pour Object | 
-   Drink Object | 
-   Open Object | 
-   Inv | 
+   Go Direction |
+   Get Object |
+   Drop Object |
+   Examine Object |
+   Pour Object |
+   Drink Object |
+   Open Object |
+   Inv |
    Quit |
    Error
 
-operationParser :: Parser Operation
-operationParser = P (\inp -> case inp of
-      'g':('o':(' ':ys)) -> do
-         case directions ys of
-            Nothing -> [(Error, "Direction not recognized")]
-            Just x -> [(Go x, [])]
-      'g':('e':('t':(' ':ys))) -> do
-         case object ys of
-            Nothing -> [(Error, "Object not recognized")]
-            Just x -> [(Get x, [])]
-      'd':('r':('o':('p':(' ':ys)))) -> do
-         case object ys of
-            Nothing -> [(Error, "Object not recognized")]
-            Just x -> [(Drop x, [])]
-      'e':('x':('a':('m':('i':('n':('e':(' ':ys))))))) -> do
-         case object ys of
-            Nothing -> [(Error, "Object not recognized")]
-            Just x -> [(Examine x, [])]
-      'p':('o':('u':('r':(' ':ys)))) -> do
-         case object ys of
-            Nothing -> [(Error, "Object not recognized")]
-            Just x -> [(Pour x, [])]
-      'd':('r':('i':('n':('k':(' ':ys))))) -> do
-         case object ys of
-            Nothing -> [(Error, "Object not recognized")]
-            Just x -> [(Drink x, [])]
-      'o':('p':('e':('n':(' ':ys)))) -> do
-         case object ys of
-            Nothing -> [(Error, "Object not recognized")]
-            Just x -> [(Open x, [])]
-      "inv" -> [(Inv, [])]
-      "quit" -> [(Quit, [])]
-      [] -> [(Error, "Please input a command")]
-      ys -> [(Error, "Command not recognized")]
-   )
+operations :: GameData -> Operation -> (GameData, String)
+operations state cmd = case cmd of
+                        Go x -> go x state
+                        Get x -> get x state
+                        Drop x -> put x state
+                        Examine x -> examine x state
+                        Pour x -> pour x state
+                        Drink x -> drink x state
+                        Open x -> open x state
+                        Inv -> inv state
+                        Quit -> quit state
+                        _ -> (state, "I don't understand")
+
+operationParser :: String -> Operation
+operationParser = \inp -> case inp of
+     'g':('o':(' ':ys)) -> do
+        maybe Error Go (directions ys)
+     'g':('e':('t':(' ':ys))) -> do
+        maybe Error Get (object ys)
+     'd':('r':('o':('p':(' ':ys)))) -> do
+        maybe Error Drop (object ys)
+     'e':('x':('a':('m':('i':('n':('e':(' ':ys))))))) -> do
+        maybe Error Examine (object ys)
+     'p':('o':('u':('r':(' ':ys)))) -> do
+        maybe Error Pour (object ys)
+     'd':('r':('i':('n':('k':(' ':ys))))) -> do
+        maybe Error Drink (object ys)
+     'o':('p':('e':('n':(' ':ys)))) -> do
+        maybe Error Open (object ys)
+     "inv" -> Inv
+     "quit" -> Quit
+     [] -> Error
+     ys -> Error
 
 instance Functor Parser where
    fmap f p = do p' <- p
