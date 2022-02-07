@@ -61,22 +61,44 @@ mug       = Obj "mug" "a coffee mug" "A coffee mug"
 fullmug   = Obj "mug" "a full coffee mug" "A coffee mug containing freshly brewed coffee"
 coffeepot = Obj "coffee" "a pot of coffee" "A pot containing freshly brewed coffee"
 
+note0, note1, note2, note3, note4 :: Object
+note0     = Obj "note0" "note0" "you = 0 ; you + coffee = 20"
+note1     = Obj "note1" "note1" "To do: Find my key"
+note2     = Obj "note2" "note2" "Where's the face masks?"
+note3     = Obj "note3" "note3" "From Dad: Is there something inside your dirty clothes?"
+note4     = Obj "note4" "note4" "From Mom: There are some face masks in the garage."
+
+mask, key, door :: Object
+mask      = Obj "mask" "face mask" "Face mask to protect yourself"
+key       = Obj "key" "key" "Key to open the door in the hallway"
+door      = Obj "door" "door" "Door in the hallway"
+
 -- Rooms
 
-bedroom, kitchen, hall, street :: Room
+bedroom, toilet, kitchen, hall, garage, street :: Room
 
 bedroom = Room "You are in your bedroom."
-               [Exit North "To the north is a kitchen. " "kitchen"]
-               [mug]
+               [Exit North "To the north is a kitchen. " "kitchen",
+                Exit South "To the south is a toilet. " "toilet"]
+               [mug,note1,note2]
+
+toilet = Room "You are in your toilet."
+               [Exit South "To the south is a your bedroom. " "bedroom"]
+               [key]
 
 kitchen = Room "You are in the kitchen."
                [Exit South "To the south is your bedroom. " "bedroom",
                 Exit West "To the west is a hallway. " "hall"]
-               [coffeepot]
+               [coffeepot, note3, note4]
 
 hall = Room "You are in the hallway. The front door is closed. "
-            [Exit East "To the east is a kitchen. " "kitchen"]
+            [Exit East "To the east is a kitchen. " "kitchen",
+             Exit West "To the west is a garage. " "garage"]
             []
+
+garage = Room "You are in the garage."
+               [Exit West "To the west is a hallway. " "hall"]
+               [mask]
 
 -- New data about the hall for when we open the door
 
@@ -89,8 +111,10 @@ street = Room "You have made it out of the house."
               []
 
 gameworld = [("bedroom", bedroom),
+             ("toilet", toilet),
              ("kitchen", kitchen),
              ("hall", hall),
+             ("garage", garage),
              ("street", street)]
 
 -- Initial game state

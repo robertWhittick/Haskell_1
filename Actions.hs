@@ -155,11 +155,13 @@ drink obj state = if or [fullmug == item | item <- inventory state]
                   else (state, "Missing a full mug of coffee!")
 
 {- Opens the door if in the hall and updates the Room to be able to go Out.
-   Only works if the player has drank coffee. -}
+   Only works if the player has drank coffee & has the key and the mask. -}
 
 open :: Action
-open obj state | caffeinated state = (updateRoom state "hall" hall', "Door opened!")
-               | otherwise         = (state, "You not energetic enough for a walk!")
+open obj state | caffeinated state &&
+                 carrying state key &&
+                 carrying state mask = (updateRoom state "hall" hall', "Door opened!")
+               | otherwise           = (state, "You are not ready for a walk!")
    where hall' = hall {room_desc = openedhall, exits = exits hall ++ openedexits}
 
 {- Lists player's inventory. -}
