@@ -49,25 +49,17 @@ operations state cmd = case cmd of
                         _ -> (state, "I don't understand")
 
 operationParser :: String -> Operation
-operationParser = \inp -> case inp of
-     'g':('o':(' ':ys)) -> do
-        maybe Error Go (directions ys)
-     'g':('e':('t':(' ':ys))) -> do
-        maybe Error Get (object ys)
-     'd':('r':('o':('p':(' ':ys)))) -> do
-        maybe Error Drop (object ys)
-     'e':('x':('a':('m':('i':('n':('e':(' ':ys))))))) -> do
-        maybe Error Examine (object ys)
-     'p':('o':('u':('r':(' ':ys)))) -> do
-        maybe Error Pour (object ys)
-     'd':('r':('i':('n':('k':(' ':ys))))) -> do
-        maybe Error Drink (object ys)
-     'o':('p':('e':('n':(' ':ys)))) -> do
-        maybe Error Open (object ys)
-     "inv" -> Inv
-     "quit" -> Quit
-     [] -> Error
-     ys -> Error
+operationParser cmd = case words cmd of
+     ["go",arg] -> maybe Error Go (directions arg)
+     ["get",arg] -> maybe Error Get (object arg)
+     ["drop",arg] -> maybe Error Drop (object arg)
+     ["examine",arg] -> maybe Error Examine (object arg)
+     ["pour",arg] -> maybe Error Pour (object arg)
+     ["drink",arg] -> maybe Error Drink (object arg)
+     ["open",arg] -> maybe Error Open (object arg)
+     ["inv"] -> Inv
+     ["quit"] -> Quit
+     _ -> Error
 
 instance Functor Parser where
    fmap f p = do p' <- p
