@@ -2,6 +2,7 @@ module Actions where
 
 import World
 
+--Converts a String into a Direction
 directions :: String -> Maybe Direction
 directions "north"   = Just North
 directions "west"    = Just West
@@ -10,11 +11,13 @@ directions "east"    = Just East
 directions "out"     = Just Out
 directions _         = Nothing
 
+--Converts a String into an Object
 object :: String -> Maybe Object {-objects to be consistent or object to be distinctive ?-}
 object "mug"        = Just mug {-cannot distinguish full and normal mug ?!-}
 object "coffee"     = Just coffeepot
 object _            = Nothing
 
+--Converts a String into a Room
 rooms :: String -> Maybe Room
 rooms "bedroom"     = Just bedroom
 rooms "kitchen"     = Just kitchen
@@ -95,15 +98,10 @@ carrying :: GameData -> Object -> Bool
 carrying gd obj = or [obj == item | item <- inventory gd]
 
 {-
-Define the "go" action. Given a direction and a game state, update the game
-state with the new location. If there is no exit that way, report an error.
-Remember Actions return a 2-tuple of GameData and String. The String is
-a message reported to the player.
-
-e.g.
-*Main> go "north" initState
-(kitchen,"OK")
-
+Given a Direction and a GameData, create a new GameData where the player
+moves in that direction and a message to be displayed.
+If the player can't move in that direction, give back the given GameData
+and a message to be displayed.
 -}
 
 go :: Action'
@@ -112,16 +110,10 @@ go dir state =
       Nothing -> (state, "Room error")
       Just newroom -> (state { location_id = newroom }, "Moved to new room")
 
-{- Remove an item from the current room, and put it in the player's inventory.
-   This should only work if the object is in the current room. Use 'objectHere'
-   and 'removeObject' to remove the object, and 'updateRoom' to replace the
-   room in the game state with the new room which doesn't contain the object.
-
-   Hints: you will need to take care to update things in the right order here!
-    * create a new state with the updated inventory (use 'objectData')
-    * create a new room without the object (use 'removeObject')
-    * update the game state with this new room in the current location
-      (use 'location_id' to find where the player is)
+{- 
+Remove an Object from the current room and add it to inventory.
+Only works if the Object is in the current room.
+Also gives back a message to be displayed to the user.
 -}
 
 get :: Action
@@ -131,9 +123,10 @@ get obj state | objectHere obj rm = (state', "Object got!")
          rm = getRoomData state
          rmid = location_id state
 
-{- Remove an item from the player's inventory, and put it in the current room.
-   Similar to 'get' but in reverse - find the object in the inventory, create
-   a new room with the object in, update the game world with the new room.
+{- 
+Remove an Object from inventory and place it in the room.
+Only works if the Object is in inventory.
+Also gives back a message to be displayed to the user.
 -}
 
 put :: Action
@@ -144,9 +137,10 @@ put obj state | carrying state obj = state'
          rmid = location_id state
          (tar:_) = [item | item <- inventory state, item == obj]
 
-{- Don't update the state, just return a message giving the full description
-   of the object. As long as it's either in the room or the player's 
-   inventory! -}
+{-
+Examines an Object that is either in the current Room or in inventory.
+If the Object is found, this gives back a message describing the Object.
+-}
 
 examine :: Action
 examine obj state | carrying state obj = (state, item)
@@ -157,9 +151,8 @@ examine obj state | carrying state obj = (state, item)
       rmid = location_id state
       (item:_) = [obj_desc elem | elem <- inventory state, elem == obj]
 
-{- Pour the coffee. Obviously, this should only work if the player is carrying
-   both the pot and the mug. This should update the status of the "mug"
-   object in the player's inventory to be a new object, a "full mug".
+{-
+Pours coffee into the mug. Only works if the player is carrying both the coffee pot and the mug.
 -}
 
 pour :: Action
@@ -168,11 +161,8 @@ pour obj state = if carrying state coffeepot && carrying state obj
                        "Got a full mug of coffee!")
                  else (state, "Missing coffee pot or mug!")
 
-{- Drink the coffee. This should only work if the player has a full coffee 
-   mug! Doing this is required to be allowed to open the door. Once it is
-   done, also update the 'caffeinated' flag in the game state.
-
-   Also, put the empty coffee mug back in the inventory!
+{- 
+Drink coffee. Only works if the player is carrying a *full* mug.
 -}
 
 drink :: Action
@@ -182,12 +172,9 @@ drink obj state = if or [fullmug == item | item <- inventory state]
                        "Drank a mug of coffee. You feel more energetic now!")
                   else (state, "Missing a full mug of coffee!")
 
-{- Open the door. Only allowed if the player has had coffee! 
-   This should change the description of the hall to say that the door is open,
-   and add an exit out to the street.
-
-   Use 'updateRoom' once you have made a new description. You can use 
-   'openedhall' and 'openedexits' from World.hs for this.
+{- 
+Opens the door if in the hall and updates the Room to be able to go Out. Only works if the player
+has drank coffee.
 -}
 
 open :: Action
@@ -195,7 +182,9 @@ open obj state | caffeinated state = (updateRoom state "hall" hall', "Door opene
                | otherwise         = (state, "You not energetic enough for a walk!")
    where hall' = hall {room_desc = openedhall, exits = exits hall ++ openedexits}
 
-{- Don't update the game state, just list what the player is carrying -}
+{-
+Lists player's inventory.
+-}
 
 inv :: Command
 inv state = (state, showInv (inventory state))
@@ -204,9 +193,15 @@ inv state = (state, showInv (inventory state))
          showInv' [x] = obj_longname x
          showInv' (x:xs) = obj_longname x ++ "\n" ++ showInv' xs
 
+{-
+Quits the game.
+-}
 quit :: Command
 quit state = (state { finished = True }, "Bye bye")
 
+{-
+Saves the game.
+-}
 save :: GameData -> String -> IO ()
 save gd fname = writeFile path content
    where path = ".\\" ++ fname
@@ -217,6 +212,9 @@ save gd fname = writeFile path content
                    boolToString (caffeinated gd) ++ " " ++
                    boolToString (finished gd)
 
+{-
+Loads a game from a save file.
+-}
 load :: String -> IO GameData
 load fname = do content <- readFile path
                 return $ go (words content)
@@ -228,30 +226,59 @@ load fname = do content <- readFile path
                                (stringToBool $ content !! 4)
                                (stringToBool $ content !! 5)
 
+{-
+Converts a list of Objects to a String. (Used to write the player's inventory in a save file)
+Used by: save
+-}
 listToString :: [Object] -> String
 listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "]"
 
+{-
+Converts a String to a list of Objects. (Used to load the player's inventory from a save file)
+Used by: load
+-}
 stringToList ::  String -> [Object]
 stringToList xs = map go $ wordsWhen (==',') xs
    where go x = maybe undefined id (object x)
 
+{-
+Converts a tuple containing a String and a Room to a String. (Used to save the "world" in GameData to a save file)
+Used by: save
+-}
 tupleToString :: [(String, Room)] -> String
 tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
 
+{-
+Converts a String to a tuple containing a String and a Room. (Used to load the "world" in GameData from a save file)
+Used by: load
+-}
 stringToTuple :: String -> [(String, Room)]
 stringToTuple xs = map go $ wordsWhen (==',') xs
    where go x = case rooms x of
                   Just sth -> (x, sth)
                   Nothing -> undefined
 
+{-
+Converts a Bool to a String. (Used to save various parts of GameData to a save file)
+Used by: save
+-}
 boolToString :: Bool -> String
 boolToString bool = if bool then "True" else "False"
 
+{-
+Converts a String to a Bool. (Used to load various parts of GameData from a save file)
+Used by: load
+-}
 stringToBool :: String -> Bool
 stringToBool string = string == "True"
 
-wordsWhen     :: (Char -> Bool) -> String -> [String] --Copied from stackoverflow
-wordsWhen p s =  case dropWhile p s of
-                      "" -> []
-                      s' -> w : wordsWhen p s''
-                            where (w, s'') = break p s'
+{-
+
+-}
+--Copied from stackoverflow: https://stackoverflow.com/questions/4978578/how-to-split-a-string-in-haskell
+wordsWhen     :: (Char -> Bool) -> String -> [String]
+wordsWhen p s =  case dropWhile p s of                      --remove all initial instances of the delimiter
+                      "" -> []                              --if theres nothing left, return an empty list
+                      s' -> w : wordsWhen p s''             --if there isn't nothing, cons the part before the next instance
+                            where (w, s'') = break p s'        --of the delimiter with this function recursively reapplied
+                                                               --to the rest of the string

@@ -23,6 +23,9 @@ The monad of parsers
 
 newtype Parser a              =  P (String -> [(a,String)])
 
+{-
+A command with an argument when applicable
+-}
 data Operation =
    Go Direction |
    Get Object |
@@ -35,6 +38,9 @@ data Operation =
    Quit |
    Error
 
+{-
+Converts an Operation to the resulting GameData after applying the Operation and a message for the user through intermediary functions.
+-}
 operations :: GameData -> Operation -> (GameData, String)
 operations state cmd = case cmd of
                         Go x -> go x state
@@ -48,6 +54,9 @@ operations state cmd = case cmd of
                         Quit -> quit state
                         _ -> (state, "I don't understand")
 
+{-
+Turns a String (input from the user) into an Operation.
+-}
 operationParser :: String -> Operation
 operationParser cmd = case words cmd of
      ["go",arg] -> maybe Error Go (directions arg)

@@ -29,6 +29,7 @@ data GameData = GameData { location_id :: String, -- where player is
                            finished :: Bool -- set to True at the end
                          }
 
+-- Checks the win condition (the player being in the street)
 won :: GameData -> Bool
 won gd = location_id gd == "street"
 
@@ -46,15 +47,21 @@ instance Show GameData where
 
 -- Things which do something to an object and update the game state
 type Action  = Object -> GameData -> (GameData, String)
+
+-- Things which move the player from the current room in a given direction, updating the game state
 type Action'  = Direction -> GameData -> (GameData, String)
 
 -- Things which just update the game state
 type Command = GameData -> (GameData, String)
 
+-- Objects
+
 mug, fullmug, coffeepot :: Object
 mug       = Obj "mug" "a coffee mug" "A coffee mug"
 fullmug   = Obj "mug" "a full coffee mug" "A coffee mug containing freshly brewed coffee"
 coffeepot = Obj "coffee" "a pot of coffee" "A pot containing freshly brewed coffee"
+
+-- Rooms
 
 bedroom, kitchen, hall, street :: Room
 
@@ -85,6 +92,8 @@ gameworld = [("bedroom", bedroom),
              ("kitchen", kitchen),
              ("hall", hall),
              ("street", street)]
+
+-- Initial game state
 
 initState :: GameData
 initState = GameData "bedroom" gameworld [] False False False
