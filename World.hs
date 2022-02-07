@@ -1,5 +1,22 @@
 module World where
 
+{-
+A command with an argument when applicable
+-}
+data Operation =
+   Go Direction |
+   Get Object |
+   Drop Object |
+   Examine Object |
+   Pour Object |
+   Drink Object |
+   Open Object |
+   Inv |
+   Save String |
+   Load String |
+   Quit |
+   Error
+
 data Object = Obj { obj_name :: String,
                     obj_longname :: String,
                     obj_desc :: String }

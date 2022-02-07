@@ -1,6 +1,45 @@
 module Actions where
 
 import World
+import Parsing
+
+{-
+Converts an Operation to the resulting GameData after applying the Operation and a message for the user through intermediary functions.
+-}
+operations :: GameData -> Operation -> IO (GameData, String)
+operations state cmd = case cmd of
+                        Go x -> return (go x state)
+                        Get x -> return (get x state)
+                        Drop x -> return (put x state)
+                        Examine x -> return (examine x state)
+                        Pour x -> return (pour x state)
+                        Drink x -> return (drink x state)
+                        Open x -> return (open x state)
+                        Inv -> return (inv state)
+                        Save x -> do save state x
+                                     return (state, "Saved.")
+                        Load x -> do state' <- load x
+                                     return (state', "Loaded")
+                        Quit -> return (quit state)
+                        _ -> return (state, "I don't understand")
+
+{-
+Turns a String (input from the user) into an Operation.
+-}
+operationParser :: String -> Operation
+operationParser cmd = case split2 cmd of
+     ["go",arg] -> maybe Error Go (directions arg)
+     ["get",arg] -> maybe Error Get (object arg)
+     ["drop",arg] -> maybe Error Drop (object arg)
+     ["examine",arg] -> maybe Error Examine (object arg)
+     ["pour",arg] -> maybe Error Pour (object arg)
+     ["drink",arg] -> maybe Error Drink (object arg)
+     ["open",arg] -> maybe Error Open (object arg)
+     ["inv"] -> Inv
+     ["save",arg] -> Save arg
+     ["load",arg] -> Load arg
+     ["quit"] -> Quit
+     _ -> Error
 
 --Converts a String into a Direction
 directions :: String -> Maybe Direction
@@ -206,7 +245,7 @@ save gd fname = writeFile path content
 {- Loads a game from a save file. -}
 load :: String -> IO GameData
 load fname = do content <- readFile path
-                return $ go (words content)
+                return $ go (split ' ' content)
    where path = ".\\" ++ fname
          go xs = GameData (head xs)
                           (stringToTuple $ xs !! 1)
@@ -227,7 +266,7 @@ listToString xs = "[" ++ content ++ "]"
    (Used to load the player's inventory from a save file)
    Used by: load -}
 stringToList ::  String -> [Object]
-stringToList xs = map go $ wordsWhen (==',') $ init $ tail xs
+stringToList xs = map go $ split ',' $ init $ tail xs
    where go x = maybe undefined id (object x)
 
 {-
@@ -242,7 +281,7 @@ tupleToString xs = "[" ++ init (foldr (\x rest -> x ++ "," ++ rest) [] [fst elem
    (Used to load the "world" in GameData from a save file)
    Used by: load -}
 stringToTuple :: String -> [(String, Room)]
-stringToTuple xs = map go $ wordsWhen (==',') $ init $ tail xs
+stringToTuple xs = map go $ split ',' $ init $ tail xs
    where go x = case rooms x of
                   Just sth -> (x, sth)
                   Nothing -> undefined
@@ -258,14 +297,3 @@ boolToString bool = if bool then "True" else "False"
    Used by: load -}
 stringToBool :: String -> Bool
 stringToBool string = string == "True"
-
-{-
-
--}
---Copied from stackoverflow: https://stackoverflow.com/a/4981265 by https://stackoverflow.com/users/1729925/steve
-wordsWhen     :: (Char -> Bool) -> String -> [String]
-wordsWhen p s =  case dropWhile p s of                      --remove all initial instances of the delimiter
-                      "" -> []                              --if theres nothing left, return an empty list
-                      s' -> w : wordsWhen p s''             --if there is something, cons the part before the next instance
-                            where (w, s'') = break p s'        --of the delimiter with this function recursively reapplied
-                                                               --to the rest of the string

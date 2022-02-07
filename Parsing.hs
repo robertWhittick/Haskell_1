@@ -7,9 +7,6 @@ Minor changes by Edwin Brady
 
 module Parsing where
 
-import World
-import Actions
-
 import Data.Char
 import Control.Monad
 import Control.Applicative hiding (many)
@@ -23,60 +20,14 @@ The monad of parsers
 
 newtype Parser a              =  P (String -> [(a,String)])
 
-{-
-A command with an argument when applicable
--}
-data Operation =
-   Go Direction |
-   Get Object |
-   Drop Object |
-   Examine Object |
-   Pour Object |
-   Drink Object |
-   Open Object |
-   Inv |
-   Save String |
-   Load String |
-   Quit |
-   Error
+split :: Char -> String -> [String]
+split c = divide
+   where divide xs = if null (snd $ parser xs)
+                     then [fst (parser xs)]
+                     else fst (parser xs) : divide (tail $ snd $ parser xs)
+         parser xs = head $ parse (many $ sat (/= c)) xs
 
-{-
-Converts an Operation to the resulting GameData after applying the Operation and a message for the user through intermediary functions.
--}
-operations :: GameData -> Operation -> IO (GameData, String)
-operations state cmd = case cmd of
-                        Go x -> return (go x state)
-                        Get x -> return (get x state)
-                        Drop x -> return (put x state)
-                        Examine x -> return (examine x state)
-                        Pour x -> return (pour x state)
-                        Drink x -> return (drink x state)
-                        Open x -> return (open x state)
-                        Inv -> return (inv state)
-                        Save x -> do save state x
-                                     return (state, "Saved.")
-                        Load x -> do state' <- load x
-                                     return (state', "Loaded")
-                        Quit -> return (quit state)
-                        _ -> return (state, "I don't understand")
-
-{-
-Turns a String (input from the user) into an Operation.
--}
-operationParser :: String -> Operation
-operationParser cmd = case words cmd of
-     ["go",arg] -> maybe Error Go (directions arg)
-     ["get",arg] -> maybe Error Get (object arg)
-     ["drop",arg] -> maybe Error Drop (object arg)
-     ["examine",arg] -> maybe Error Examine (object arg)
-     ["pour",arg] -> maybe Error Pour (object arg)
-     ["drink",arg] -> maybe Error Drink (object arg)
-     ["open",arg] -> maybe Error Open (object arg)
-     ["inv"] -> Inv
-     ["save",arg] -> Save arg
-     ["load",arg] -> Load arg
-     ["quit"] -> Quit
-     _ -> Error
+split2 str = [fst x, snd x] where (x:_) = parse identifier str
 
 instance Functor Parser where
    fmap f p = do p' <- p

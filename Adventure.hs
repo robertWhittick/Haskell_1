@@ -2,11 +2,8 @@ module Main where
 
 import World
 import Actions
-import Parsing
 
-import Control.Monad
 import System.IO
-import System.Exit
 
 winmessage = "Congratulations, you have made it out of the house.\n" ++
              "Now go to your lectures..."
