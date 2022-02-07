@@ -7,6 +7,9 @@ Minor changes by Edwin Brady
 
 module Parsing where
 
+import World
+import Actions
+
 import Data.Char
 import Control.Monad
 import Control.Applicative hiding (many)
@@ -19,6 +22,54 @@ The monad of parsers
 -}
 
 newtype Parser a              =  P (String -> [(a,String)])
+
+data Operation =
+   Go Direction | 
+   Get Object | 
+   Drop Object | 
+   Examine Object | 
+   Pour Object | 
+   Drink Object | 
+   Open Object | 
+   Inv | 
+   Quit |
+   Error
+
+operationParser :: Parser Operation
+operationParser = P (\inp -> case inp of
+      'g':('o':(' ':ys)) -> do
+         case directions ys of
+            Nothing -> [(Error, "Direction not recognized")]
+            Just x -> [(Go x, [])]
+      'g':('e':('t':(' ':ys))) -> do
+         case object ys of
+            Nothing -> [(Error, "Object not recognized")]
+            Just x -> [(Get x, [])]
+      'd':('r':('o':('p':(' ':ys)))) -> do
+         case object ys of
+            Nothing -> [(Error, "Object not recognized")]
+            Just x -> [(Drop x, [])]
+      'e':('x':('a':('m':('i':('n':('e':(' ':ys))))))) -> do
+         case object ys of
+            Nothing -> [(Error, "Object not recognized")]
+            Just x -> [(Examine x, [])]
+      'p':('o':('u':('r':(' ':ys)))) -> do
+         case object ys of
+            Nothing -> [(Error, "Object not recognized")]
+            Just x -> [(Pour x, [])]
+      'd':('r':('i':('n':('k':(' ':ys))))) -> do
+         case object ys of
+            Nothing -> [(Error, "Object not recognized")]
+            Just x -> [(Drink x, [])]
+      'o':('p':('e':('n':(' ':ys)))) -> do
+         case object ys of
+            Nothing -> [(Error, "Object not recognized")]
+            Just x -> [(Open x, [])]
+      "inv" -> [(Inv, [])]
+      "quit" -> [(Quit, [])]
+      [] -> [(Error, "Please input a command")]
+      ys -> [(Error, "Command not recognized")]
+   )
 
 instance Functor Parser where
    fmap f p = do p' <- p

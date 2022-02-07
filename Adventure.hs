@@ -2,6 +2,7 @@ module Main where
 
 import World
 import Actions
+import Parsing
 
 import Control.Monad
 import System.IO
