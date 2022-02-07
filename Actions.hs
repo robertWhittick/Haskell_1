@@ -12,8 +12,8 @@ directions "out"     = Just Out
 directions _         = Nothing
 
 --Converts a String into an Object
-object :: String -> Maybe Object {-objects to be consistent or object to be distinctive ?-}
-object "mug"        = Just mug {-cannot distinguish full and normal mug ?!-}
+object :: String -> Maybe Object
+object "mug"        = Just mug
 object "coffee"     = Just coffeepot
 object _            = Nothing
 
@@ -26,16 +26,7 @@ rooms "street"      = Just street
 rooms _             = Nothing
 
 {- Given a direction and a room to move from, return the room id in
-   that direction, if it exists.
-
-e.g. try these at the ghci prompt
-
-*Main> move "north" bedroom
-Just "kitchen"
-
-*Main> move "north" kitchen
-Nothing
--}
+   that direction, if it exists. -}
 
 move :: Direction -> Room -> Maybe String
 move dir rm | null tar = Nothing
@@ -92,17 +83,16 @@ addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ getRoo
 removeInv :: GameData -> Object -> GameData
 removeInv gd obj = gd {inventory = filter (/= obj) $ inventory gd}
 
-{- Does the inventory in the game state contain the given object? -}
+{- Given a game state and an object id, find if it is inside 
+   player's inventory. -}
 
 carrying :: GameData -> Object -> Bool
 carrying gd obj = or [obj == item | item <- inventory gd]
 
-{-
-Given a Direction and a GameData, create a new GameData where the player
-moves in that direction and a message to be displayed.
-If the player can't move in that direction, give back the given GameData
-and a message to be displayed.
--}
+{- Given a Direction and a GameData, create a new GameData where the player
+   moves in that direction and a message to be displayed.
+   The original GameData and an error message to be displayed if the player
+   cannot move in that direction. -}
 
 go :: Action'
 go dir state =
@@ -110,11 +100,9 @@ go dir state =
       Nothing -> (state, "Room error")
       Just newroom -> (state { location_id = newroom }, "Moved to new room")
 
-{- 
-Remove an Object from the current room and add it to inventory.
-Only works if the Object is in the current room.
-Also gives back a message to be displayed to the user.
--}
+{- Remove an Object from the current room and add it to inventory.
+   Only works if the Object is in the current room.
+   Also gives back a message to be displayed to the user. -}
 
 get :: Action
 get obj state | objectHere obj rm = (state', "Object got!")
@@ -123,11 +111,9 @@ get obj state | objectHere obj rm = (state', "Object got!")
          rm = getRoomData state
          rmid = location_id state
 
-{- 
-Remove an Object from inventory and place it in the room.
-Only works if the Object is in inventory.
-Also gives back a message to be displayed to the user.
--}
+{- Remove an Object from inventory and place it in the room.
+   Only works if the Object is in inventory.
+   Also gives back a message to be displayed to the user. -}
 
 put :: Action
 put obj state | carrying state obj = state'
@@ -137,10 +123,9 @@ put obj state | carrying state obj = state'
          rmid = location_id state
          (tar:_) = [item | item <- inventory state, item == obj]
 
-{-
-Examines an Object that is either in the current Room or in inventory.
-If the Object is found, this gives back a message describing the Object.
--}
+{- Examines an Object that is either in the current Room or in inventory.
+   A message describing the Object is displayed if found.
+   An error message otherwise. -}
 
 examine :: Action
 examine obj state | carrying state obj = (state, item)
@@ -151,9 +136,8 @@ examine obj state | carrying state obj = (state, item)
       rmid = location_id state
       (item:_) = [obj_desc elem | elem <- inventory state, elem == obj]
 
-{-
-Pours coffee into the mug. Only works if the player is carrying both the coffee pot and the mug.
--}
+{- Pours coffee into the mug if and only if the player is carrying 
+   both the coffee pot and the mug. -}
 
 pour :: Action
 pour obj state = if carrying state coffeepot && carrying state obj
@@ -161,9 +145,7 @@ pour obj state = if carrying state coffeepot && carrying state obj
                        "Got a full mug of coffee!")
                  else (state, "Missing coffee pot or mug!")
 
-{- 
-Drink coffee. Only works if the player is carrying a *full* mug.
--}
+{- Drink coffee. Only works if the player is carrying a *full* mug. -}
 
 drink :: Action
 drink obj state = if or [fullmug == item | item <- inventory state]
@@ -172,19 +154,15 @@ drink obj state = if or [fullmug == item | item <- inventory state]
                        "Drank a mug of coffee. You feel more energetic now!")
                   else (state, "Missing a full mug of coffee!")
 
-{- 
-Opens the door if in the hall and updates the Room to be able to go Out. Only works if the player
-has drank coffee.
--}
+{- Opens the door if in the hall and updates the Room to be able to go Out.
+   Only works if the player has drank coffee. -}
 
 open :: Action
 open obj state | caffeinated state = (updateRoom state "hall" hall', "Door opened!")
                | otherwise         = (state, "You not energetic enough for a walk!")
    where hall' = hall {room_desc = openedhall, exits = exits hall ++ openedexits}
 
-{-
-Lists player's inventory.
--}
+{- Lists player's inventory. -}
 
 inv :: Command
 inv state = (state, showInv (inventory state))
@@ -193,15 +171,11 @@ inv state = (state, showInv (inventory state))
          showInv' [x] = obj_longname x
          showInv' (x:xs) = obj_longname x ++ "\n" ++ showInv' xs
 
-{-
-Quits the game.
--}
+{- Quits the game.-}
 quit :: Command
 quit state = (state { finished = True }, "Bye bye")
 
-{-
-Saves the game.
--}
+{- Saves the game. -}
 save :: GameData -> String -> IO ()
 save gd fname = writeFile path content
    where path = ".\\" ++ fname
@@ -212,9 +186,7 @@ save gd fname = writeFile path content
                    boolToString (caffeinated gd) ++ " " ++
                    boolToString (finished gd)
 
-{-
-Loads a game from a save file.
--}
+{- Loads a game from a save file. -}
 load :: String -> IO GameData
 load fname = do content <- readFile path
                 return $ go (words content)
@@ -226,17 +198,15 @@ load fname = do content <- readFile path
                                (stringToBool $ content !! 4)
                                (stringToBool $ content !! 5)
 
-{-
-Converts a list of Objects to a String. (Used to write the player's inventory in a save file)
-Used by: save
--}
+{- Converts a list of Objects to a String.
+   (Used to write the player's inventory in a save file)
+   Used by: save -}
 listToString :: [Object] -> String
 listToString xs = "[" ++ foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs ++ "]"
 
-{-
-Converts a String to a list of Objects. (Used to load the player's inventory from a save file)
-Used by: load
--}
+{- Converts a String to a list of Objects.
+   (Used to load the player's inventory from a save file)
+   Used by: load -}
 stringToList ::  String -> [Object]
 stringToList xs = map go $ wordsWhen (==',') xs
    where go x = maybe undefined id (object x)
@@ -248,27 +218,24 @@ Used by: save
 tupleToString :: [(String, Room)] -> String
 tupleToString xs = "[" ++ foldr (\x rest -> x ++ "," ++ rest) [] [fst elem | elem <- xs] ++ "]"
 
-{-
-Converts a String to a tuple containing a String and a Room. (Used to load the "world" in GameData from a save file)
-Used by: load
--}
+{- Converts a String to a tuple containing a String and a Room.
+   (Used to load the "world" in GameData from a save file)
+   Used by: load -}
 stringToTuple :: String -> [(String, Room)]
 stringToTuple xs = map go $ wordsWhen (==',') xs
    where go x = case rooms x of
                   Just sth -> (x, sth)
                   Nothing -> undefined
 
-{-
-Converts a Bool to a String. (Used to save various parts of GameData to a save file)
-Used by: save
--}
+{- Converts a Bool to a String.
+   (Used to save various parts of GameData to a save file)
+   Used by: save -}
 boolToString :: Bool -> String
 boolToString bool = if bool then "True" else "False"
 
-{-
-Converts a String to a Bool. (Used to load various parts of GameData from a save file)
-Used by: load
--}
+{- Converts a String to a Bool.
+   (Used to load various parts of GameData from a save file)
+   Used by: load -}
 stringToBool :: String -> Bool
 stringToBool string = string == "True"
 
