@@ -1,7 +1,7 @@
 module Main where
 
 import World
-import Actions
+import Actions_misc
 
 import System.Console.Haskeline
 
