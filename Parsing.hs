@@ -20,14 +20,15 @@ The monad of parsers
 
 newtype Parser a              =  P (String -> [(a,String)])
 
-split :: Char -> String -> [String]
+split :: Char -> String -> [String] --split string to a list using specified delimiter
 split c = divide
-   where divide xs = if null (snd $ parser xs)
-                     then [fst (parser xs)]
-                     else fst (parser xs) : divide (tail $ snd $ parser xs)
-         parser xs = head $ parse (many $ sat (/= c)) xs
+   where divide xs = if null (snd $ parser xs) --no more substring to split
+                     then [fst (parser xs)] --return a list
+                     else fst (parser xs) : divide (tail $ snd $ parser xs) --return a longer list
+         parser xs = head $ parse (many $ sat (/= c)) xs --merge characters if not 'c'
 
-split2 str = [fst x, snd x] where (x:_) = parse identifier str
+split2 :: [Char] -> [String] --split string to instruction & argument
+split2 str = [fst x, snd x] where (x:_) = parse identifier str 
 
 instance Functor Parser where
    fmap f p = do p' <- p

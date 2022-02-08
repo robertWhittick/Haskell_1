@@ -1,3 +1,6 @@
+{- This module only stores the actions/ commands.
+   Parser, save & load functionsd are at Actions_misc.hs -}
+
 module Actions where
 
 import World
@@ -6,8 +9,8 @@ import World
    that direction, if it exists. -}
 move :: Direction -> Room -> Maybe String
 move dir rm | null tar = Nothing
-            | otherwise = Just $ head tar
-   where tar = [room id | id <- exits rm, dir == exit_dir id]
+            | otherwise = Just $ head tar --there is only one ID
+   where tar = [room id | id <- exits rm, dir == exit_dir id] --list of matching IDs
 
 {- Return True if the object appears in the room. -}
 objectHere :: Object  -> Room -> Bool
@@ -27,7 +30,7 @@ addObject o rm = rm {objects = o : objects rm}
    that you can assume the object is in the list (i.e. that you have
    checked with 'objectHere') -}
 findObj :: Object -> [Object] -> Object
-findObj o ds = tar where (tar:_) = [obj | obj <- ds, o == obj]
+findObj o ds = tar where (tar:_) = [obj | obj <- ds, o == obj] --there should be only one object
 
 {- Use 'findObj' to find an object in a room description -}
 objectData :: Object -> Room -> Object
@@ -36,14 +39,14 @@ objectData o rm = findObj o $ objects rm
 {- Given a game state and a room id, replace the old room information with
    new data. If the room id does not already exist, add it. -}
 updateRoom :: GameData -> String -> Room -> GameData
-updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd]
+updateRoom gd rmid rmdata = if or [rmid == fst rm | rm <- world gd] --check if the room exists
                             then gd {world = [if rmid == fst rm then (fst rm, rmdata) else rm | rm <- world gd]}
                             else gd {world = world gd ++ [(rmid, rmdata)]}
 
 {- Given a game state and an object id, find the object in the current
    room and add it to the player's inventory -}
 addInv :: GameData -> Object -> GameData
-addInv gd obj = gd {inventory = inventory gd ++ [item | item <- objects $ getRoomData gd, item == obj]}
+addInv gd obj = gd {inventory = inventory gd ++ filter (== obj) (objects $ getRoomData gd)} --there should be only one object
 
 {- Given a game state and an object id, remove the object from the
    inventory. Hint: use filter to check if something should still be in
@@ -79,37 +82,38 @@ get obj state | objectHere obj rm = (state', "Object got!")
    Only works if the Object is in inventory.
    Also gives back a message to be displayed to the user. -}
 put :: Action
-put obj state | carrying state obj = state'
+put obj state | carrying state obj = (state', "Object put!")
               | otherwise          = (state, "Object not found!")
-   where state'= (updateRoom (removeInv state obj) rmid (addObject tar rm), "Object put!")
+   where state'= updateRoom (removeInv state obj) rmid (addObject item rm)
          rm = getRoomData state
          rmid = location_id state
-         (tar:_) = [item | item <- inventory state, item == obj]
+         (item:_) = [elem | elem <- inventory state, elem == obj]
 
 {- Examines an Object that is either in the current Room or in inventory.
    A message describing the Object is displayed if found.
    An error message otherwise. -}
 examine :: Action
-examine obj state | carrying state obj = (state, item)
+examine obj state | carrying state obj = (state, obj_desc item)
                   | objectHere obj rm  = (state, obj_desc $ objectData obj rm)
                   | otherwise          = (state, "Object not found!")
   where
       rm = getRoomData state
       rmid = location_id state
-      (item:_) = [obj_desc elem | elem <- inventory state, elem == obj]
+      (item:_) = [elem | elem <- inventory state, elem == obj]
 
 {- Pours coffee into the mug if and only if the player is carrying 
    both the coffee pot and the mug. -}
 pour :: Action
 pour obj state = if carrying state coffeepot && carrying state obj
                  then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state]},
-                       "Got a full mug of coffee!")
+                       "Got a full mug of coffee!") --update state with a full mug of coffee
                  else (state, "Missing coffee pot or mug!")
 
-{- Drink coffee. Only works if the player is carrying a *full* mug. -}
+{- Drink coffee. Only works if the player is carrying a *full* mug.
+   The full mug of coffee will become an empty mug. -}
 drink :: Action
-drink obj state = if or [fullmug == item | item <- inventory state]
-                  then (state {inventory = [if obj == mug then fullmug else obj | obj <- inventory state],
+drink obj state = if or [fullmug == item | item <- inventory state] --check if the player has it
+                  then (state {inventory = [if obj == fullmug then mug else obj | obj <- inventory state],
                                caffeinated = True},
                        "Drank a mug of coffee. You feel more energetic now!")
                   else (state, "Missing a full mug of coffee!")

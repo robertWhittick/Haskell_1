@@ -1,3 +1,6 @@
+{- This module only stores the parser, save & load functions.
+   Actions/ commands are at Actions.hs -}
+
 {-# LANGUAGE ParallelListComp #-}
 module Actions_misc where
 
@@ -90,13 +93,13 @@ save gd fname = writeFile (savePath ++ fname) content
 
 {- Saves the current GameData. -}
 saveGame :: GameData -> [Char]
-saveGame gd = location_id gd ++ " " ++
+saveGame gd = location_id gd ++ " " ++ --' ' is used to separate different attributes
               tupleToString (world gd) ++ " " ++
               show (inventory gd) ++ " " ++
               show (poured gd) ++ " " ++
               show (caffeinated gd) ++ " " ++
               show (opened gd) ++ " " ++
-              show (finished gd) ++ "\n"
+              show (finished gd) ++ "\n" --'\n' is used to separate different data
 
 {- Saves the current room (objects only).
    The object name is parsed in a more complicated way
@@ -115,7 +118,7 @@ tupleToString xs = "[" ++ init (foldr (\x rest -> x ++ "," ++ rest) [] [fst elem
 {- Loads a game from a save file. -}
 load :: [Char] -> IO GameData
 load fname = do content <- readFile $ savePath ++ fname
-                return $ loadGame $ split '\n' content
+                return $ loadGame $ split '\n' content --this splits the file into lines
 
 {- Loads the GameData and all Room data. -}
 loadGame :: [String] -> GameData

@@ -99,7 +99,7 @@ bedroom = Room "You are in your bedroom."
                [mug,note1,note2]
 
 toilet = Room "You are in your toilet."
-               [Exit South "To the south is a your bedroom. " "bedroom"]
+               [Exit North "To the south is a your bedroom. " "bedroom"]
                [key]
 
 kitchen = Room "You are in the kitchen."
@@ -113,7 +113,7 @@ hall = Room "You are in the hallway. The front door is closed. "
             []
 
 garage = Room "You are in the garage."
-               [Exit West "To the west is a hallway. " "hall"]
+               [Exit East "To the west is a hallway. " "hall"]
                [mask]
 
 -- New data about the hall for when we open the door
