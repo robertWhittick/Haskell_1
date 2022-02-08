@@ -1,3 +1,4 @@
+{-# LANGUAGE ParallelListComp #-}
 module Actions where
 
 import World
@@ -44,12 +45,12 @@ operationParser cmd = case split2 cmd of
 --Converts a String into a Direction
 directions :: String -> Maybe Direction
 directions x = case x of
-                  "north" -> Just North 
-                  "south" -> Just South 
-                  "west" -> Just West 
-                  "east" -> Just East 
+                  "north" -> Just North
+                  "south" -> Just South
+                  "west" -> Just West
+                  "east" -> Just East
                   "out" -> Just Out
-                  "in" -> Just In 
+                  "in" -> Just In
                   _ -> Nothing
 
 --Converts a String into an Object
@@ -57,26 +58,26 @@ object :: String -> Maybe Object
 object x = case x of
             "mug" -> Just mug
             "full mug" -> Just fullmug
-            "coffee" -> Just coffeepot 
-            "note0" -> Just note0 
+            "coffee" -> Just coffeepot
+            "note0" -> Just note0
             "note1" -> Just note1
             "note2" -> Just note2
-            "note3" -> Just note3 
-            "note4" -> Just note4 
-            "mask" -> Just mask 
-            "key" -> Just key 
-            "door" -> Just door 
+            "note3" -> Just note3
+            "note4" -> Just note4
+            "mask" -> Just mask
+            "key" -> Just key
+            "door" -> Just door
             _ -> Nothing
 
 --Converts a String into a Room
 rooms :: String -> Maybe Room
 rooms x = case x of
             "bedroom" -> Just bedroom
-            "toilet" -> Just toilet 
-            "kitchen" -> Just kitchen 
+            "toilet" -> Just toilet
+            "kitchen" -> Just kitchen
             "hall" -> Just hall
             "garage" -> Just garage
-            "street" -> Just street 
+            "street" -> Just street
             _ -> Nothing
 
 {- Given a direction and a room to move from, return the room id in
@@ -215,40 +216,61 @@ quit state = (state { finished = True }, "Bye bye")
 {- Saves the game. -}
 save :: GameData -> String -> IO ()
 save gd fname = writeFile path content
-   where path = ".\\" ++ fname
-         content = location_id gd ++ " " ++
-                   tupleToString (world gd) ++ " " ++
-                   listToString (inventory gd) ++ " " ++
-                   boolToString (poured gd) ++ " " ++
-                   boolToString (caffeinated gd) ++ " " ++
-                   boolToString (finished gd)
+   where path = ".\\save\\" ++ fname
+         content = init (saveGame gd ++
+                         saveRoom (map snd $ world gd))
+
+saveGame :: GameData -> [Char]
+saveGame gd = location_id gd ++ " " ++
+              tupleToString (world gd) ++ " " ++
+              show (inventory gd) ++ " " ++
+              show (poured gd) ++ " " ++
+              show (caffeinated gd) ++ " " ++
+              show (opened gd) ++ " " ++
+              show (finished gd) ++ "\n"
+
+saveRoom :: [Room] -> [Char]
+saveRoom (x:xs) = show (map obj_name $ objects x) ++ "\n" ++
+                  saveRoom xs
+saveRoom [] = []
 
 {- Loads a game from a save file. -}
-load :: String -> IO GameData
 load fname = do content <- readFile path
-                return $ go (split ' ' content)
-   where path = ".\\" ++ fname
-         go xs = GameData (head xs)
-                          (stringToTuple $ xs !! 1)
-                          (stringToList $ xs !! 2)
-                          (stringToBool $ xs !! 3)
-                          (stringToBool $ xs !! 4)
-                          (stringToBool $ xs !! 5)
+                return $ loadGame $ split '\n' content
+   where path = ".\\save\\" ++ fname
 
-{- Converts a list of Objects to a String.
-   (Used to write the player's inventory in a save file)
-   Used by: save -}
-listToString :: [Object] -> String
-listToString xs = "[" ++ content ++ "]"
-   where temp = foldr (\x rest -> obj_name x ++ "," ++ rest) [] xs
-         content = if null temp then "" else init temp
+
+
+loadGame dat = last $ last [gd ++ [loadRoom state elem] | state <- gd | elem <- tail list]
+   where list = [(fst x,y) | x <- world base | y <- tail dat]
+         xs = split ' ' $ head dat
+         gd = [loadRoom base (head list)]
+         base = GameData (head xs)
+                (stringToTuple $ xs !! 1)
+                (stringToList $ xs !! 2)
+                (stringToBool $ xs !! 3)
+                (stringToBool $ xs !! 4)
+                (stringToBool $ xs !! 5)
+                (stringToBool $ xs !! 6)
+
+loadRoom gd dat = updateRoom gd rmid new
+   where new = Room desc exit (stringToList $ snd dat)
+         rmid = fst dat
+         rm = maybe undefined id (rooms rmid)
+         desc = if rm == hall && opened gd
+                then openedhall 
+                else room_desc rm
+         exit = if rm == hall && opened gd
+                then exits rm ++ openedexits
+                else exits rm
 
 {- Converts a String to a list of Objects.
    (Used to load the player's inventory from a save file)
    Used by: load -}
 stringToList ::  String -> [Object]
-stringToList xs = map go $ split ',' $ init $ tail xs
-   where go x = maybe undefined id (object x)
+stringToList xs = if list == [""] then [] else map go list
+   where list = split ',' $ init $ tail xs
+         go x = maybe undefined id (object $ init $ tail x)
 
 {- Converts a tuple containing a String and a Room to a String.
    (Used to save the "world" in GameData to a save file)
@@ -264,12 +286,6 @@ stringToTuple xs = map go $ split ',' $ init $ tail xs
    where go x = case rooms x of
                   Just sth -> (x, sth)
                   Nothing -> undefined
-
-{- Converts a Bool to a String.
-   (Used to save various parts of GameData to a save file)
-   Used by: save -}
-boolToString :: Bool -> String
-boolToString bool = if bool then "True" else "False"
 
 {- Converts a String to a Bool.
    (Used to load various parts of GameData from a save file)

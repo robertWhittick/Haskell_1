@@ -41,6 +41,7 @@ data GameData = GameData { location_id :: String, -- where player is
                            inventory :: [Object], -- objects player has
                            poured :: Bool, -- coffee is poured
                            caffeinated :: Bool, -- coffee is drunk
+                           opened :: Bool, -- door is opened
                            finished :: Bool -- set to True at the end
                          }
 
@@ -135,7 +136,7 @@ gameworld = [("bedroom", bedroom),
 -- Initial game state
 
 initState :: GameData
-initState = GameData "bedroom" gameworld [] False False False
+initState = GameData "bedroom" gameworld [] False False False False 
 
 {- Return the room the player is currently in. -}
 
