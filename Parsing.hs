@@ -28,7 +28,8 @@ split c = divide
          parser xs = head $ parse (many $ sat (/= c)) xs --merge characters if not 'c'
 
 split2 :: [Char] -> [String] --split string to instruction & argument
-split2 str = [fst x, snd x] where (x:_) = parse identifier str 
+split2 str = if null x then [] else [fst $ head x, snd $ head x]
+   where x = parse identifier str
 
 instance Functor Parser where
    fmap f p = do p' <- p
